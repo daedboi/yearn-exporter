@@ -1,10 +1,12 @@
 networks:
-    default: mainnet
+  default: mainnet
 
 autofetch_sources: false
 
+dotenv: .env
+
 compiler:
-    evm_version: london
-    solc:
-        use_latest_patch:
-            - '0x514910771AF9Ca656af840dff83E8264EcF986CA'
+  evm_version: london
+  solc:
+    use_latest_patch:
+      - "0x514910771AF9Ca656af840dff83E8264EcF986CA"
