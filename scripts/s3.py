@@ -26,7 +26,7 @@ from yearn.v1.vaults import VaultV1
 from yearn.v2.registry import Registry as RegistryV2
 from yearn.v2.vaults import Vault as VaultV2
 
-sentry_sdk.set_tag('script','s3')
+sentry_sdk.set_tag('script', 's3')
 
 warnings.simplefilter("ignore", BrownieEnvironmentWarning)
 
@@ -57,11 +57,13 @@ def wrap_vault(
             }
         ]
     else:
-        strategies = [{"address": str(strategy.strategy), "name": strategy.name} for strategy in vault.strategies]
+        strategies = [{"address": str(
+            strategy.strategy), "name": strategy.name} for strategy in vault.strategies]
 
     inception = contract_creation_block(str(vault.vault))
 
-    token_alias = aliases[str(vault.token)]["symbol"] if str(vault.token) in aliases else vault.token.symbol()
+    token_alias = aliases[str(vault.token)]["symbol"] if str(
+        vault.token) in aliases else vault.token.symbol()
     vault_alias = token_alias
 
     tvl = vault.tvl()
@@ -69,7 +71,8 @@ def wrap_vault(
     migration = None
 
     if str(vault.vault) in assets_metadata:
-        migration = {"available": assets_metadata[str(vault.vault)][1], "address": assets_metadata[str(vault.vault)][2]}
+        migration = {"available": assets_metadata[str(
+            vault.vault)][1], "address": assets_metadata[str(vault.vault)][2]}
 
     object = {
         "inception": inception,
@@ -150,12 +153,14 @@ def main():
 
     samples = get_samples()
 
-    registry_v2 = RegistryV2(include_experimental=(export_mode == "experimental"))
+    registry_v2 = RegistryV2(
+        include_experimental=(export_mode == "experimental"))
 
     if chain.id == Network.Mainnet:
         special = [YveCRVJar(), Backscratcher()]
         registry_v1 = RegistryV1()
-        vaults = list(itertools.chain(special, registry_v1.vaults, registry_v2.vaults, registry_v2.experiments))
+        vaults = list(itertools.chain(special, registry_v1.vaults,
+                      registry_v2.vaults, registry_v2.experiments))
     else:
         vaults = registry_v2.vaults
 
@@ -165,7 +170,8 @@ def main():
     assets_metadata = get_assets_metadata(registry_v2.vaults)
 
     for vault in vaults:
-        data.append(wrap_vault(vault, samples, aliases, icon_url, assets_metadata))
+        data.append(wrap_vault(vault, samples, aliases,
+                    icon_url, assets_metadata))
 
     if len(data) == 0:
         raise ValueError(f"Data is empty for chain_id: {chain.id}")
@@ -180,7 +186,8 @@ def main():
         suffix = "experimental"
 
     if len(to_export) == 0:
-        raise EmptyS3Export(f"No data for vaults was found in generated data, aborting upload")
+        raise EmptyS3Export(
+            f"No data for vaults was found in generated data, aborting upload")
 
     file_name, s3_path = _get_export_paths(suffix)
     _export(to_export, file_name, s3_path)
@@ -206,7 +213,8 @@ def _export(data, file_name, s3_path):
         file_name,
         aws_bucket,
         s3_path,
-        ExtraArgs={'ContentType': "application/json", 'CacheControl': "max-age=1800"},
+        ExtraArgs={'ContentType': "application/json",
+                   'CacheControl': "max-age=1800"},
     )
 
 
@@ -239,17 +247,15 @@ def _get_export_paths(suffix):
     return file_name, s3_path
 
 
-
-
 def with_monitoring():
     from telegram.ext import Updater
 
-    private_group = os.environ.get('TG_YFIREBOT_GROUP_INTERNAL')
-    public_group = os.environ.get('TG_YFIREBOT_GROUP_EXTERNAL')
-    updater = Updater(os.environ.get('TG_YFIREBOT'))
+    private_group = os.environ.get('TG_GROUP_INTERNAL')
+    updater = Updater(os.environ.get('TG_BOT'))
     now = datetime.now()
     message = f"`[{now}]`\n⚙️ API (vaults) for {Network(chain.id).name} is updating..."
-    ping = updater.bot.send_message(chat_id=private_group, text=message, parse_mode="Markdown")
+    ping = updater.bot.send_message(
+        chat_id=private_group, text=message, parse_mode="Markdown")
     ping = ping.message_id
     try:
         main()
@@ -257,9 +263,11 @@ def with_monitoring():
         tb = traceback.format_exc()
         export_mode = os.getenv("EXPORT_MODE", "endorsed")
         now = datetime.now()
-        message = f"`[{now}]`\n🔥 API ({export_mode} vaults) update for {Network(chain.id).name} failed!\n```\n{tb}\n```"[:4000]
-        updater.bot.send_message(chat_id=private_group, text=message, parse_mode="Markdown", reply_to_message_id=ping)
-        updater.bot.send_message(chat_id=public_group, text=message, parse_mode="Markdown")
+        message = f"`[{now}]`\n🔥 API ({export_mode} vaults) update for {Network(chain.id).name} failed!\n```\n{tb}\n```"[
+            :4000]
+        updater.bot.send_message(
+            chat_id=private_group, text=message, parse_mode="Markdown", reply_to_message_id=ping)
         raise error
     message = f"✅ API (vaults) update for {Network(chain.id).name} successful!"
-    updater.bot.send_message(chat_id=private_group, text=message, reply_to_message_id=ping)
+    updater.bot.send_message(chat_id=private_group,
+                             text=message, reply_to_message_id=ping)
